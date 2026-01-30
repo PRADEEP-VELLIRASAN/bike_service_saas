@@ -57,27 +57,92 @@ class _BookingListScreenState extends State<BookingListScreen>
     final bookingProvider = context.watch<BookingProvider>();
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Bookings'),
+        backgroundColor: AppTheme.background,
+        elevation: 0,
+        title: const Text(
+          'Bookings',
+          style: TextStyle(
+            color: AppTheme.foreground,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         automaticallyImplyLeading: false,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: AppTheme.textSecondary,
-          tabs: _filters.map((f) => Tab(text: f.label)).toList(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppTheme.border)),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              indicatorColor: AppTheme.foreground,
+              indicatorWeight: 2,
+              labelColor: AppTheme.foreground,
+              unselectedLabelColor: AppTheme.mutedForeground,
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.normal,
+              ),
+              tabs: _filters.map((f) => Tab(text: f.label)).toList(),
+            ),
+          ),
         ),
       ),
       body: RefreshIndicator(
         onRefresh: () => bookingProvider.loadBookings(status: _selectedFilter),
+        color: AppTheme.primary,
         child: bookingProvider.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppTheme.primary,
+                  strokeWidth: 2,
+                ),
+              )
             : bookingProvider.bookings.isEmpty
-                ? const EmptyState(
-                    icon: Icons.calendar_today_outlined,
-                    title: 'No bookings found',
-                    description: 'Bookings will appear here when customers book services',
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: AppTheme.muted,
+                            borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                          ),
+                          child: const Icon(
+                            Icons.calendar_today_outlined,
+                            size: 32,
+                            color: AppTheme.mutedForeground,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No bookings found',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.foreground,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Bookings will appear here when customers book services',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.mutedForeground,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
@@ -85,7 +150,7 @@ class _BookingListScreenState extends State<BookingListScreen>
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final booking = bookingProvider.bookings[index];
-                      return BookingCard(
+                      return BookingAccordionCard(
                         bookingId: booking.id,
                         customerName: booking.customer.name,
                         customerEmail: booking.customer.email,
@@ -94,7 +159,7 @@ class _BookingListScreenState extends State<BookingListScreen>
                         status: booking.statusDisplay,
                         totalPrice: booking.totalPrice,
                         services: booking.services.map((s) => s.serviceName).toList(),
-                        onTap: () {
+                        onViewDetails: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(

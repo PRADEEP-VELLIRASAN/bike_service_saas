@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
-import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
 import '../config/app_config.dart';
 
-/// Authentication state provider
+/// Authentication state provider using local storage
 class AuthProvider with ChangeNotifier {
-  final ApiService _api = ApiService();
+  final LocalStorageService _storage = LocalStorageService();
   
   User? _user;
   String? _token;
@@ -35,10 +35,12 @@ class AuthProvider with ChangeNotifier {
       if (token != null && userJson != null) {
         _token = token;
         _user = User.fromJson(jsonDecode(userJson));
-        _api.setToken(token);
       }
+      
+      // Initialize sample data
+      await _storage.initializeSampleData();
     } catch (e) {
-      print('Error initializing auth: $e');
+      debugPrint('Error initializing auth: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -58,7 +60,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _api.register(
+      final response = await _storage.register(
         email: email,
         password: password,
         name: name,
@@ -68,7 +70,7 @@ class AuthProvider with ChangeNotifier {
       
       await _saveAuthData(response);
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {
@@ -90,14 +92,14 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _api.login(
+      final response = await _storage.login(
         email: email,
         password: password,
       );
       
       await _saveAuthData(response);
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {
@@ -110,10 +112,9 @@ class AuthProvider with ChangeNotifier {
   }
 
   /// Save auth data to storage
-  Future<void> _saveAuthData(AuthResponse response) async {
+  Future<void> _saveAuthData(LocalAuthResponse response) async {
     _token = response.accessToken;
     _user = response.user;
-    _api.setToken(_token);
     
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConfig.tokenKey, response.accessToken);
@@ -124,7 +125,6 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _user = null;
     _token = null;
-    _api.setToken(null);
     
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(AppConfig.tokenKey);

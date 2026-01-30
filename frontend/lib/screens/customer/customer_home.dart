@@ -41,35 +41,26 @@ class _CustomerHomeState extends State<CustomerHome> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
+          border: Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: NavigationBar(
           selectedIndex: _currentIndex,
           onDestinationSelected: (index) => setState(() => _currentIndex = index),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
+              icon: Icon(Icons.grid_view_outlined),
+              selectedIcon: Icon(Icons.grid_view),
               label: 'Services',
             ),
             NavigationDestination(
-              icon: Icon(Icons.calendar_today_outlined),
-              selectedIcon: Icon(Icons.calendar_today),
-              label: 'My Bookings',
+              icon: Icon(Icons.receipt_long_outlined),
+              selectedIcon: Icon(Icons.receipt_long),
+              label: 'Bookings',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),
               selectedIcon: Icon(Icons.person),
-              label: 'Profile',
+              label: 'Account',
             ),
           ],
         ),
@@ -120,12 +111,7 @@ class _ServicesTabState extends State<_ServicesTab> {
 
   void _proceedToBooking() {
     if (_selectedServiceIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one service'),
-          backgroundColor: AppTheme.warningColor,
-        ),
-      );
+      showSnackbar(context, 'Please select at least one service', isError: true);
       return;
     }
 
@@ -138,9 +124,8 @@ class _ServicesTabState extends State<_ServicesTab> {
       ),
     ).then((booked) {
       if (booked == true) {
-        setState(() {
-          _selectedServiceIds.clear();
-        });
+        setState(() => _selectedServiceIds.clear());
+        showSnackbar(context, 'Booking created successfully!', isSuccess: true);
       }
     });
   }
@@ -149,51 +134,54 @@ class _ServicesTabState extends State<_ServicesTab> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final serviceProvider = context.watch<ServiceProvider>();
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width > 600;
 
     return SafeArea(
       child: Column(
         children: [
           // Header
-          Container(
-            padding: const EdgeInsets.all(20),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hello, ${authProvider.user?.name ?? 'Customer'}! 👋',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, ${authProvider.user?.name ?? 'there'}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.foreground,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Book your bike service today',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Select services to book',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.mutedForeground,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     Container(
-                      width: 50,
-                      height: 50,
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                        borderRadius: BorderRadius.circular(15),
+                        color: AppTheme.primary,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                       ),
                       child: const Icon(
                         Icons.two_wheeler,
-                        color: Colors.white,
-                        size: 28,
+                        color: AppTheme.primaryForeground,
+                        size: 24,
                       ),
                     ),
                   ],
@@ -201,44 +189,6 @@ class _ServicesTabState extends State<_ServicesTab> {
               ],
             ),
           ),
-
-          // Services Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Available Services',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                if (_selectedServiceIds.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_selectedServiceIds.length} selected',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
 
           // Services List
           Expanded(
@@ -253,12 +203,15 @@ class _ServicesTabState extends State<_ServicesTab> {
                           description: 'Check back later for available services',
                         )
                       : ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isDesktop ? size.width * 0.15 : 16,
+                            vertical: 8,
+                          ),
                           itemCount: serviceProvider.services.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 12),
+                          separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             final service = serviceProvider.services[index];
-                            return ServiceCard(
+                            return ServiceAccordionCard(
                               name: service.name,
                               description: service.description,
                               price: service.price,
@@ -271,51 +224,48 @@ class _ServicesTabState extends State<_ServicesTab> {
             ),
           ),
 
-          // Bottom Book Button
+          // Bottom CTA
           if (_selectedServiceIds.isNotEmpty)
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+                color: AppTheme.card,
+                border: Border(top: BorderSide(color: AppTheme.border)),
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Total',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.textSecondary,
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${_selectedServiceIds.length} service${_selectedServiceIds.length > 1 ? 's' : ''} selected',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.mutedForeground,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '\$${_totalPrice.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
+                          Text(
+                            '\$${_totalPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.foreground,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: GradientButton(
-                      text: 'Book Now',
+                    ShadcnButton(
+                      text: 'Continue',
+                      icon: Icons.arrow_forward,
                       onPressed: _proceedToBooking,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
         ],
@@ -331,114 +281,107 @@ class _ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width > 600;
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? size.width * 0.2 : 16,
+          vertical: 24,
+        ),
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            // Profile Avatar
+            // Avatar
             Container(
-              width: 100,
-              height: 100,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                color: AppTheme.muted,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
               ),
               child: Center(
                 child: Text(
                   user?.name.substring(0, 1).toUpperCase() ?? 'U',
                   style: const TextStyle(
-                    fontSize: 40,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppTheme.foreground,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               user?.name ?? 'User',
               style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.foreground,
               ),
             ),
             Text(
               user?.email ?? '',
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.textSecondary,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.mutedForeground,
               ),
-            ),
-            const SizedBox(height: 32),
-
-            // Profile Options
-            _ProfileOption(
-              icon: Icons.person_outline,
-              title: 'Account Details',
-              onTap: () {},
-            ),
-            _ProfileOption(
-              icon: Icons.notifications_outlined,
-              title: 'Notifications',
-              onTap: () {},
-            ),
-            _ProfileOption(
-              icon: Icons.help_outline,
-              title: 'Help & Support',
-              onTap: () {},
-            ),
-            _ProfileOption(
-              icon: Icons.info_outline,
-              title: 'About',
-              onTap: () {},
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Logout'),
-                      content: const Text('Are you sure you want to logout?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            authProvider.logout();
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Logout'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.logout, color: AppTheme.errorColor),
-                label: const Text(
-                  'Logout',
-                  style: TextStyle(color: AppTheme.errorColor),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppTheme.errorColor),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+
+            // Account Options
+            ShadcnAccordion(
+              title: 'Account Settings',
+              leadingIcon: Icons.settings_outlined,
+              content: Column(
+                children: [
+                  _SettingItem(icon: Icons.person_outline, title: 'Edit Profile'),
+                  _SettingItem(icon: Icons.notifications_outlined, title: 'Notifications'),
+                  _SettingItem(icon: Icons.lock_outline, title: 'Change Password'),
+                ],
               ),
+            ),
+            ShadcnAccordion(
+              title: 'Support',
+              leadingIcon: Icons.help_outline,
+              content: Column(
+                children: [
+                  _SettingItem(icon: Icons.chat_bubble_outline, title: 'Contact Us'),
+                  _SettingItem(icon: Icons.description_outlined, title: 'Terms of Service'),
+                  _SettingItem(icon: Icons.privacy_tip_outlined, title: 'Privacy Policy'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Logout
+            ShadcnButton(
+              text: 'Sign out',
+              isOutlined: true,
+              isDestructive: true,
+              width: double.infinity,
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Sign out'),
+                    content: const Text('Are you sure you want to sign out?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          authProvider.logout();
+                          Navigator.pop(ctx);
+                        },
+                        child: const Text('Sign out', style: TextStyle(color: AppTheme.destructive)),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -447,35 +390,26 @@ class _ProfileTab extends StatelessWidget {
   }
 }
 
-class _ProfileOption extends StatelessWidget {
+class _SettingItem extends StatelessWidget {
   final IconData icon;
   final String title;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
-  const _ProfileOption({
+  const _SettingItem({
     required this.icon,
     required this.title,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: AppTheme.textSecondary),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      trailing: const Icon(
-        Icons.arrow_forward_ios,
-        size: 16,
-        color: AppTheme.textSecondary,
-      ),
+      leading: Icon(icon, size: 20, color: AppTheme.mutedForeground),
+      title: Text(title, style: const TextStyle(fontSize: 14)),
+      trailing: const Icon(Icons.chevron_right, size: 18, color: AppTheme.mutedForeground),
       contentPadding: EdgeInsets.zero,
+      dense: true,
     );
   }
 }

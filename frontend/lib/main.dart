@@ -22,13 +22,18 @@ class BikeServiceApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
         ChangeNotifierProvider(create: (_) => ServiceProvider()),
-        ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, BookingProvider>(
+          create: (_) => BookingProvider(),
+          update: (_, auth, booking) {
+            booking?.setAuthProvider(auth);
+            return booking ?? BookingProvider()..setAuthProvider(auth);
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'Bike Service Station',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
         home: const AuthWrapper(),
       ),
@@ -46,18 +51,22 @@ class AuthWrapper extends StatelessWidget {
 
     // Show loading while checking auth state
     if (authProvider.isLoading) {
-      return const Scaffold(
+      return Scaffold(
+        backgroundColor: AppTheme.background,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(color: AppTheme.primaryColor),
-              SizedBox(height: 24),
+              CircularProgressIndicator(
+                color: AppTheme.primary,
+                strokeWidth: 2,
+              ),
+              const SizedBox(height: 24),
               Text(
                 'Loading...',
                 style: TextStyle(
                   fontSize: 16,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.mutedForeground,
                 ),
               ),
             ],

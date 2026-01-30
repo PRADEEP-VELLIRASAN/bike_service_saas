@@ -34,87 +34,73 @@ class _LoginScreenState extends State<LoginScreen> {
       password: _passwordController.text,
     );
 
-    if (success && mounted) {
-      // Navigation handled by main.dart based on auth state
-    } else if (mounted && authProvider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.error!),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
+    if (!success && mounted && authProvider.error != null) {
+      showSnackbar(context, authProvider.error!, isError: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final screenHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width > 600;
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: SizedBox(
-            height: screenHeight - 100,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? size.width * 0.25 : 24,
+              vertical: 24,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
-                  // Logo and Title
-                  Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            gradient: AppTheme.primaryGradient,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryColor.withOpacity(0.3),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.two_wheeler,
-                            size: 48,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Welcome Back!',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sign in to continue',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
+                  // Logo
+                  Container(
+                    width: 56,
+                    height: 56,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                    ),
+                    child: const Icon(
+                      Icons.two_wheeler,
+                      size: 32,
+                      color: AppTheme.primaryForeground,
                     ),
                   ),
-                  const SizedBox(height: 48),
+                  
+                  // Title
+                  const Text(
+                    'Welcome back',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.foreground,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Enter your credentials to access your account',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.mutedForeground,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
                   // Email Field
-                  CustomTextField(
+                  ShadcnInput(
                     controller: _emailController,
                     label: 'Email',
-                    hint: 'Enter your email',
-                    prefixIcon: Icons.email_outlined,
+                    placeholder: 'name@example.com',
+                    prefixIcon: Icons.mail_outline,
                     keyboardType: TextInputType.emailAddress,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -126,26 +112,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // Password Field
-                  CustomTextField(
+                  ShadcnInput(
                     controller: _passwordController,
                     label: 'Password',
-                    hint: 'Enter your password',
+                    placeholder: 'Enter your password',
                     prefixIcon: Icons.lock_outline,
                     obscureText: _obscurePassword,
-                    suffixIcon: IconButton(
+                    suffix: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
-                        color: AppTheme.textSecondary,
+                        size: 18,
+                        color: AppTheme.mutedForeground,
                       ),
                       onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
+                        setState(() => _obscurePassword = !_obscurePassword);
                       },
                     ),
                     validator: (value) {
@@ -155,48 +140,53 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
 
                   // Login Button
-                  GradientButton(
-                    text: 'Sign In',
+                  ShadcnButton(
+                    text: 'Sign in',
                     isLoading: authProvider.isLoading,
                     onPressed: _handleLogin,
+                    width: double.infinity,
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 16),
 
                   // Register Link
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Don't have an account? ",
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                          ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Don't have an account? ",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.mutedForeground,
                         ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const RegisterScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text(
-                            'Sign Up',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryColor,
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
                             ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Sign up',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.foreground,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),

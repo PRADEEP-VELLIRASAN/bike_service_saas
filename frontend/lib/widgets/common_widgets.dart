@@ -1,46 +1,100 @@
 import 'package:flutter/material.dart';
 import '../config/theme.dart';
 
+// ============================================================================
+// SHADCN-STYLE BUTTON VARIANTS
+// ============================================================================
+
+enum ShadcnButtonVariant { primary, outline, ghost, destructive }
+enum ShadcnButtonSize { sm, md, lg, icon }
+
 /// Shadcn-style Button component
 class ShadcnButton extends StatelessWidget {
-  final String text;
+  final String? text;
   final VoidCallback? onPressed;
   final bool isLoading;
-  final bool isOutlined;
-  final bool isDestructive;
   final IconData? icon;
   final double? width;
+  final ShadcnButtonVariant variant;
+  final ShadcnButtonSize size;
+  // Legacy support
+  final bool isOutlined;
+  final bool isDestructive;
 
   const ShadcnButton({
     super.key,
-    required this.text,
+    this.text,
     this.onPressed,
     this.isLoading = false,
-    this.isOutlined = false,
-    this.isDestructive = false,
     this.icon,
     this.width,
+    this.variant = ShadcnButtonVariant.primary,
+    this.size = ShadcnButtonSize.md,
+    this.isOutlined = false,
+    this.isDestructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDestructive
-        ? AppTheme.destructive
-        : (isOutlined ? Colors.transparent : AppTheme.primary);
-    final fgColor = isDestructive
-        ? AppTheme.destructiveForeground
-        : (isOutlined ? AppTheme.foreground : AppTheme.primaryForeground);
-    final borderColor = isOutlined ? AppTheme.input : Colors.transparent;
+    // Resolve variant from legacy props if needed
+    final resolvedVariant = isDestructive
+        ? ShadcnButtonVariant.destructive
+        : (isOutlined ? ShadcnButtonVariant.outline : variant);
+
+    Color bgColor, fgColor, borderColor;
+    switch (resolvedVariant) {
+      case ShadcnButtonVariant.destructive:
+        bgColor = AppTheme.destructive;
+        fgColor = AppTheme.destructiveForeground;
+        borderColor = Colors.transparent;
+        break;
+      case ShadcnButtonVariant.outline:
+        bgColor = Colors.transparent;
+        fgColor = AppTheme.foreground;
+        borderColor = AppTheme.input;
+        break;
+      case ShadcnButtonVariant.ghost:
+        bgColor = Colors.transparent;
+        fgColor = AppTheme.foreground;
+        borderColor = Colors.transparent;
+        break;
+      case ShadcnButtonVariant.primary:
+      default:
+        bgColor = AppTheme.primary;
+        fgColor = AppTheme.primaryForeground;
+        borderColor = Colors.transparent;
+    }
+
+    double height;
+    EdgeInsets padding;
+    switch (size) {
+      case ShadcnButtonSize.sm:
+        height = 36;
+        padding = const EdgeInsets.symmetric(horizontal: 12);
+        break;
+      case ShadcnButtonSize.lg:
+        height = 52;
+        padding = const EdgeInsets.symmetric(horizontal: 24);
+        break;
+      case ShadcnButtonSize.icon:
+        height = 40;
+        padding = EdgeInsets.zero;
+        break;
+      case ShadcnButtonSize.md:
+      default:
+        height = 44;
+        padding = const EdgeInsets.symmetric(horizontal: 16);
+    }
 
     return SizedBox(
-      width: width,
-      height: 44,
+      width: size == ShadcnButtonSize.icon ? height : width,
+      height: height,
       child: TextButton(
         onPressed: isLoading ? null : onPressed,
         style: TextButton.styleFrom(
           backgroundColor: bgColor,
           foregroundColor: fgColor,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: padding,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppTheme.radiusMd),
             side: BorderSide(color: borderColor),
@@ -55,25 +109,31 @@ class ShadcnButton extends StatelessWidget {
                   color: fgColor,
                 ),
               )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[
-                    Icon(icon, size: 18),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
-                ],
-              ),
+            : size == ShadcnButtonSize.icon
+                ? Icon(icon, size: 20)
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (icon != null) ...[
+                        Icon(icon, size: 18),
+                        if (text != null) const SizedBox(width: 8),
+                      ],
+                      if (text != null)
+                        Text(text!, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    ],
+                  ),
       ),
     );
   }
 }
 
-/// Shadcn-style Input field
+// ============================================================================
+// SHADCN-STYLE INPUT
+// ============================================================================
+
 class ShadcnInput extends StatelessWidget {
-  final TextEditingController controller;
+  final TextEditingController? controller;
   final String? label;
   final String? placeholder;
   final IconData? prefixIcon;
@@ -85,7 +145,7 @@ class ShadcnInput extends StatelessWidget {
 
   const ShadcnInput({
     super.key,
-    required this.controller,
+    this.controller,
     this.label,
     this.placeholder,
     this.prefixIcon,
@@ -133,7 +193,10 @@ class ShadcnInput extends StatelessWidget {
   }
 }
 
-/// Shadcn-style Card
+// ============================================================================
+// SHADCN-STYLE CARD
+// ============================================================================
+
 class ShadcnCard extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
@@ -163,7 +226,10 @@ class ShadcnCard extends StatelessWidget {
   }
 }
 
-/// Shadcn-style Accordion (ExpansionTile wrapper)
+// ============================================================================
+// SHADCN-STYLE ACCORDION
+// ============================================================================
+
 class ShadcnAccordion extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -228,7 +294,10 @@ class ShadcnAccordion extends StatelessWidget {
   }
 }
 
-/// Shadcn-style Badge/Chip
+// ============================================================================
+// BADGES
+// ============================================================================
+
 class ShadcnBadge extends StatelessWidget {
   final String text;
   final Color? color;
@@ -271,19 +340,19 @@ class ShadcnBadge extends StatelessWidget {
   }
 }
 
-/// Status Badge with auto-coloring
 class StatusBadge extends StatelessWidget {
   final String status;
+  final Color? color;
 
-  const StatusBadge({super.key, required this.status});
+  const StatusBadge({super.key, required this.status, this.color});
 
   @override
   Widget build(BuildContext context) {
-    final color = AppTheme.getStatusColor(status);
+    final resolvedColor = color ?? AppTheme.getStatusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: resolvedColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppTheme.radiusSm),
       ),
       child: Text(
@@ -291,14 +360,17 @@ class StatusBadge extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: color,
+          color: resolvedColor,
         ),
       ),
     );
   }
 }
 
-/// Empty state widget
+// ============================================================================
+// EMPTY STATE
+// ============================================================================
+
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -361,12 +433,16 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Service Card - Accordion style
+// ============================================================================
+// SERVICE ACCORDION CARD
+// ============================================================================
+
 class ServiceAccordionCard extends StatelessWidget {
   final String name;
   final String? description;
   final double price;
   final String estimatedTime;
+  final bool isActive;
   final bool isSelected;
   final bool showActions;
   final VoidCallback? onTap;
@@ -379,6 +455,7 @@ class ServiceAccordionCard extends StatelessWidget {
     this.description,
     required this.price,
     required this.estimatedTime,
+    this.isActive = true,
     this.isSelected = false,
     this.showActions = false,
     this.onTap,
@@ -410,13 +487,32 @@ class ServiceAccordionCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.foreground,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.foreground,
+                              ),
+                            ),
+                          ),
+                          if (!isActive)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppTheme.muted,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'Inactive',
+                                style: TextStyle(fontSize: 10, color: AppTheme.mutedForeground),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -470,7 +566,7 @@ class ServiceAccordionCard extends StatelessWidget {
             ],
             if (showActions) ...[
               const SizedBox(height: 12),
-              const Divider(height: 1),
+              const Divider(height: 1, color: AppTheme.border),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -519,32 +615,43 @@ class ServiceAccordionCard extends StatelessWidget {
   }
 }
 
-/// Booking Accordion Card
+// ============================================================================
+// BOOKING ACCORDION CARD
+// ============================================================================
+
 class BookingAccordionCard extends StatelessWidget {
   final String bookingId;
   final String customerName;
+  final String? customerEmail;
+  final String? customerPhone;
   final DateTime bookingDate;
   final String status;
   final double totalPrice;
   final List<String> services;
-  final VoidCallback? onTap;
+  final bool showCustomerInfo;
+  final VoidCallback? onViewDetails;
 
   const BookingAccordionCard({
     super.key,
     required this.bookingId,
     required this.customerName,
+    this.customerEmail,
+    this.customerPhone,
     required this.bookingDate,
     required this.status,
     required this.totalPrice,
     required this.services,
-    this.onTap,
+    this.showCustomerInfo = true,
+    this.onViewDetails,
   });
 
   @override
   Widget build(BuildContext context) {
     return ShadcnAccordion(
-      title: customerName,
-      subtitle: '#${bookingId.substring(0, 8)} • ${bookingDate.day}/${bookingDate.month}/${bookingDate.year}',
+      title: showCustomerInfo ? customerName : 'Booking #${bookingId.substring(0, 8)}',
+      subtitle: showCustomerInfo 
+          ? '#${bookingId.substring(0, 8)} • ${bookingDate.day}/${bookingDate.month}/${bookingDate.year}'
+          : '${bookingDate.day}/${bookingDate.month}/${bookingDate.year}',
       leadingIcon: Icons.calendar_today_outlined,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,6 +663,26 @@ class BookingAccordionCard extends StatelessWidget {
               StatusBadge(status: status),
             ],
           ),
+          if (showCustomerInfo && customerEmail != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Icon(Icons.email_outlined, size: 14, color: AppTheme.mutedForeground),
+                const SizedBox(width: 8),
+                Text(customerEmail!, style: const TextStyle(fontSize: 13, color: AppTheme.mutedForeground)),
+              ],
+            ),
+          ],
+          if (showCustomerInfo && customerPhone != null) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.phone_outlined, size: 14, color: AppTheme.mutedForeground),
+                const SizedBox(width: 8),
+                Text(customerPhone!, style: const TextStyle(fontSize: 13, color: AppTheme.mutedForeground)),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           const Text('Services', style: TextStyle(fontSize: 13, color: AppTheme.mutedForeground)),
           const SizedBox(height: 6),
@@ -578,9 +705,9 @@ class BookingAccordionCard extends StatelessWidget {
           const SizedBox(height: 12),
           ShadcnButton(
             text: 'View Details',
-            onPressed: onTap,
+            onPressed: onViewDetails,
             width: double.infinity,
-            isOutlined: true,
+            variant: ShadcnButtonVariant.outline,
           ),
         ],
       ),
@@ -588,7 +715,10 @@ class BookingAccordionCard extends StatelessWidget {
   }
 }
 
-/// Snackbar helper
+// ============================================================================
+// SNACKBAR HELPERS
+// ============================================================================
+
 void showSnackbar(BuildContext context, String message, {bool isError = false, bool isSuccess = false}) {
   final color = isError
       ? AppTheme.destructive
@@ -614,4 +744,103 @@ void showSnackbar(BuildContext context, String message, {bool isError = false, b
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMd)),
     ),
   );
+}
+
+void showSuccessSnackbar(BuildContext context, String message) {
+  showSnackbar(context, message, isSuccess: true);
+}
+
+void showErrorSnackbar(BuildContext context, String message) {
+  showSnackbar(context, message, isError: true);
+}
+
+// ============================================================================
+// LEGACY WIDGETS (for backwards compatibility)
+// ============================================================================
+
+// Legacy widgets that may still be referenced
+class LoadingOverlay extends StatelessWidget {
+  final bool isLoading;
+  final Widget child;
+
+  const LoadingOverlay({super.key, required this.isLoading, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        if (isLoading)
+          Container(
+            color: AppTheme.background.withOpacity(0.7),
+            child: const Center(
+              child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// Legacy card types for backwards compatibility
+class ServiceCard extends ServiceAccordionCard {
+  const ServiceCard({
+    super.key,
+    required super.name,
+    super.description,
+    required super.price,
+    required super.estimatedTime,
+    super.isSelected,
+    super.showActions,
+    super.onTap,
+    super.onEdit,
+    super.onDelete,
+  });
+}
+
+class BookingCard extends BookingAccordionCard {
+  const BookingCard({
+    super.key,
+    required super.bookingId,
+    required super.customerName,
+    super.customerEmail,
+    super.customerPhone,
+    required super.bookingDate,
+    required super.status,
+    required super.totalPrice,
+    required super.services,
+    VoidCallback? onTap,
+  }) : super(onViewDetails: onTap);
+}
+
+// Legacy text field
+class CustomTextField extends ShadcnInput {
+  const CustomTextField({
+    super.key,
+    super.controller,
+    super.label,
+    String? hint,
+    super.prefixIcon,
+    super.suffix,
+    super.obscureText,
+    super.keyboardType,
+    super.validator,
+    super.maxLines,
+  }) : super(placeholder: hint);
+}
+
+// Legacy button
+class GradientButton extends ShadcnButton {
+  const GradientButton({
+    super.key,
+    required String text,
+    super.onPressed,
+    super.isLoading,
+    super.width,
+  }) : super(text: text);
+}
+
+// Legacy status chip
+class StatusChip extends StatusBadge {
+  const StatusChip({super.key, required super.status});
 }

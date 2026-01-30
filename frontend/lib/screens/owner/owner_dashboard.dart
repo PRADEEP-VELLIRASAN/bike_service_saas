@@ -37,9 +37,8 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
-
     return Scaffold(
+      backgroundColor: AppTheme.background,
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -50,14 +49,8 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
+          color: AppTheme.card,
+          border: Border(top: BorderSide(color: AppTheme.border)),
         ),
         child: NavigationBar(
           selectedIndex: _currentIndex,
@@ -66,20 +59,22 @@ class _OwnerDashboardState extends State<OwnerDashboard> {
           },
           backgroundColor: Colors.transparent,
           elevation: 0,
+          indicatorColor: AppTheme.accent.withOpacity(0.1),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.dashboard_outlined),
-              selectedIcon: Icon(Icons.dashboard),
+              icon: Icon(Icons.dashboard_outlined, color: AppTheme.mutedForeground),
+              selectedIcon: Icon(Icons.dashboard, color: AppTheme.accent),
               label: 'Dashboard',
             ),
             NavigationDestination(
-              icon: Icon(Icons.build_outlined),
-              selectedIcon: Icon(Icons.build),
+              icon: Icon(Icons.build_outlined, color: AppTheme.mutedForeground),
+              selectedIcon: Icon(Icons.build, color: AppTheme.accent),
               label: 'Services',
             ),
             NavigationDestination(
-              icon: Icon(Icons.calendar_today_outlined),
-              selectedIcon: Icon(Icons.calendar_today),
+              icon: Icon(Icons.calendar_today_outlined, color: AppTheme.mutedForeground),
+              selectedIcon: Icon(Icons.calendar_today, color: AppTheme.accent),
               label: 'Bookings',
             ),
           ],
@@ -112,6 +107,7 @@ class _DashboardHome extends StatelessWidget {
             bookingProvider.loadBookings(),
           ]);
         },
+        color: AppTheme.primary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
@@ -122,101 +118,109 @@ class _DashboardHome extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hello, ${authProvider.user?.name ?? 'Owner'}! 👋',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome back 👋',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.mutedForeground,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Manage your bike service station',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppTheme.textSecondary,
+                        const SizedBox(height: 4),
+                        Text(
+                          authProvider.user?.name ?? 'Owner',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.foreground,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  IconButton(
+                  ShadcnButton(
+                    icon: Icons.logout,
+                    variant: ShadcnButtonVariant.ghost,
+                    size: ShadcnButtonSize.icon,
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
-                          title: const Text('Logout'),
-                          content: const Text('Are you sure you want to logout?'),
+                          backgroundColor: AppTheme.background,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+                            side: const BorderSide(color: AppTheme.border),
+                          ),
+                          title: const Text(
+                            'Logout',
+                            style: TextStyle(color: AppTheme.foreground),
+                          ),
+                          content: const Text(
+                            'Are you sure you want to logout?',
+                            style: TextStyle(color: AppTheme.mutedForeground),
+                          ),
                           actions: [
-                            TextButton(
+                            ShadcnButton(
+                              text: 'Cancel',
+                              variant: ShadcnButtonVariant.outline,
                               onPressed: () => Navigator.pop(context),
-                              child: const Text('Cancel'),
                             ),
-                            TextButton(
+                            ShadcnButton(
+                              text: 'Logout',
+                              variant: ShadcnButtonVariant.destructive,
                               onPressed: () {
                                 authProvider.logout();
                                 Navigator.pop(context);
                               },
-                              child: const Text('Logout'),
                             ),
                           ],
                         ),
                       );
                     },
-                    icon: const Icon(Icons.logout),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
 
-              // Stats Cards
-              Row(
+              // Stats Grid
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.5,
                 children: [
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.pending_actions,
-                      title: 'Pending',
-                      value: pendingBookings.length.toString(),
-                      color: AppTheme.warningColor,
-                      onTap: () => onNavigate(2),
-                    ),
+                  _StatCard(
+                    icon: Icons.pending_actions,
+                    title: 'Pending',
+                    value: pendingBookings.length.toString(),
+                    color: const Color(0xFFF59E0B),
+                    onTap: () => onNavigate(2),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.local_shipping,
-                      title: 'Ready',
-                      value: readyBookings.length.toString(),
-                      color: AppTheme.successColor,
-                      onTap: () => onNavigate(2),
-                    ),
+                  _StatCard(
+                    icon: Icons.local_shipping,
+                    title: 'Ready',
+                    value: readyBookings.length.toString(),
+                    color: const Color(0xFF10B981),
+                    onTap: () => onNavigate(2),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.check_circle,
-                      title: 'Completed',
-                      value: completedBookings.length.toString(),
-                      color: AppTheme.primaryColor,
-                      onTap: () => onNavigate(2),
-                    ),
+                  _StatCard(
+                    icon: Icons.check_circle,
+                    title: 'Completed',
+                    value: completedBookings.length.toString(),
+                    color: AppTheme.primary,
+                    onTap: () => onNavigate(2),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.build,
-                      title: 'Services',
-                      value: serviceProvider.services.length.toString(),
-                      color: AppTheme.secondaryColor,
-                      onTap: () => onNavigate(1),
-                    ),
+                  _StatCard(
+                    icon: Icons.build,
+                    title: 'Services',
+                    value: serviceProvider.services.length.toString(),
+                    color: const Color(0xFF8B5CF6),
+                    onTap: () => onNavigate(1),
                   ),
                 ],
               ),
@@ -231,24 +235,64 @@ class _DashboardHome extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimary,
+                      color: AppTheme.foreground,
                     ),
                   ),
-                  TextButton(
+                  ShadcnButton(
+                    text: 'View All',
+                    variant: ShadcnButtonVariant.ghost,
+                    size: ShadcnButtonSize.sm,
                     onPressed: () => onNavigate(2),
-                    child: const Text('View All'),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
 
               if (bookingProvider.isLoading)
-                const Center(child: CircularProgressIndicator())
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primary,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
               else if (pendingBookings.isEmpty)
-                const EmptyState(
-                  icon: Icons.inbox,
-                  title: 'No pending bookings',
-                  description: 'New bookings will appear here',
+                ShadcnCard(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppTheme.muted,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        ),
+                        child: const Icon(
+                          Icons.inbox_outlined,
+                          color: AppTheme.mutedForeground,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No pending bookings',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.foreground,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'New bookings will appear here',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               else
                 ListView.separated(
@@ -258,7 +302,7 @@ class _DashboardHome extends StatelessWidget {
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final booking = pendingBookings[index];
-                    return BookingCard(
+                    return BookingAccordionCard(
                       bookingId: booking.id,
                       customerName: booking.customer.name,
                       customerEmail: booking.customer.email,
@@ -267,7 +311,7 @@ class _DashboardHome extends StatelessWidget {
                       status: booking.statusDisplay,
                       totalPrice: booking.totalPrice,
                       services: booking.services.map((s) => s.serviceName).toList(),
-                      onTap: () {
+                      onViewDetails: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -308,30 +352,52 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.2)),
+          color: AppTheme.card,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+          border: Border.all(color: AppTheme.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                  ),
+                  child: Icon(icon, color: color, size: 20),
+                ),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: AppTheme.mutedForeground,
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.foreground,
+                  ),
+                ),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.mutedForeground,
+                  ),
+                ),
+              ],
             ),
           ],
         ),

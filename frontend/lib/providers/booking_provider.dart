@@ -1,10 +1,16 @@
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import '../models/booking.dart';
-import '../services/api_service.dart';
+import '../models/user.dart';
+import '../services/local_storage_service.dart';
+import 'auth_provider.dart';
 
-/// Booking management provider
+/// Booking management provider using local storage
 class BookingProvider with ChangeNotifier {
-  final ApiService _api = ApiService();
+  final LocalStorageService _storage = LocalStorageService();
+  
+  // Reference to auth provider for getting current user
+  AuthProvider? _authProvider;
   
   List<Booking> _bookings = [];
   Booking? _currentBooking;
@@ -17,6 +23,11 @@ class BookingProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
   int get totalBookings => _totalBookings;
+
+  /// Set auth provider reference
+  void setAuthProvider(AuthProvider authProvider) {
+    _authProvider = authProvider;
+  }
 
   /// Filter bookings by status
   List<Booking> getBookingsByStatus(BookingStatus status) {
@@ -35,7 +46,10 @@ class BookingProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _api.getBookings(
+      final user = _authProvider?.user;
+      final response = await _storage.getBookings(
+        userId: user?.id,
+        userRole: user?.role,
         status: status?.apiValue,
         dateFrom: dateFrom?.toIso8601String().split('T')[0],
         dateTo: dateTo?.toIso8601String().split('T')[0],
@@ -48,7 +62,7 @@ class BookingProvider with ChangeNotifier {
         _bookings.addAll(response.bookings);
       }
       _totalBookings = response.total;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
     } catch (e) {
       _error = 'Failed to load bookings';
@@ -65,8 +79,8 @@ class BookingProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      _currentBooking = await _api.getBooking(id);
-    } on ApiException catch (e) {
+      _currentBooking = await _storage.getBooking(id);
+    } on LocalStorageException catch (e) {
       _error = e.message;
     } catch (e) {
       _error = 'Failed to load booking details';
@@ -87,7 +101,15 @@ class BookingProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final booking = await _api.createBooking(
+      final user = _authProvider?.user;
+      if (user == null) {
+        _error = 'Please login to create a booking';
+        return false;
+      }
+      
+      final booking = await _storage.createBooking(
+        userId: user.id,
+        customer: user,
         serviceIds: serviceIds,
         bookingDate: bookingDate,
         notes: notes,
@@ -95,7 +117,7 @@ class BookingProvider with ChangeNotifier {
       _bookings.insert(0, booking);
       _totalBookings++;
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {
@@ -117,7 +139,7 @@ class BookingProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final updated = await _api.updateBookingStatus(
+      final updated = await _storage.updateBookingStatus(
         id: id,
         status: status.apiValue,
       );
@@ -130,7 +152,7 @@ class BookingProvider with ChangeNotifier {
         _currentBooking = updated;
       }
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {
@@ -149,14 +171,13 @@ class BookingProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      await _api.cancelBooking(id);
+      await _storage.cancelBooking(id);
       final index = _bookings.indexWhere((b) => b.id == id);
       if (index != -1) {
-        // Update local state to cancelled
         await loadBookings();
       }
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {

@@ -34,9 +34,10 @@ class _BookingScreenState extends State<BookingScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              surface: AppTheme.surfaceColor,
+              primary: AppTheme.primary,
+              onPrimary: AppTheme.primaryForeground,
+              surface: AppTheme.card,
+              onSurface: AppTheme.foreground,
             ),
           ),
           child: child!,
@@ -61,20 +62,10 @@ class _BookingScreenState extends State<BookingScreen> {
     );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Booking confirmed! Check your email for confirmation.'),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
+      showSuccessSnackbar(context, 'Booking confirmed! Check your email for confirmation.');
       Navigator.pop(context, true);
     } else if (mounted && bookingProvider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(bookingProvider.error!),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
+      showErrorSnackbar(context, bookingProvider.error!);
     }
   }
 
@@ -90,197 +81,225 @@ class _BookingScreenState extends State<BookingScreen> {
     final totalPrice = selectedServices.fold(0.0, (sum, s) => sum + s.price);
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Confirm Booking'),
+        backgroundColor: AppTheme.background,
+        elevation: 0,
+        title: const Text(
+          'Confirm Booking',
+          style: TextStyle(
+            color: AppTheme.foreground,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.foreground),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: LoadingOverlay(
-        isLoading: bookingProvider.isLoading,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Date Selection
-              const Text(
-                'Select Date',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: _selectDate,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.borderColor),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Date Selection
+                const Text(
+                  'Booking Date',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.foreground,
                   ),
-                  child: Row(
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: _selectDate,
+                  child: ShadcnCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppTheme.accent.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                          ),
+                          child: const Icon(
+                            Icons.calendar_today,
+                            color: AppTheme.accent,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Appointment Date',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.mutedForeground,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.foreground,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: AppTheme.mutedForeground,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Selected Services
+                const Text(
+                  'Selected Services',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.foreground,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ShadcnCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.calendar_today,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                      ...selectedServices.asMap().entries.map(
+                        (entry) => Column(
                           children: [
-                            const Text(
-                              'Booking Date',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.textSecondary,
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          entry.value.name,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppTheme.foreground,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          entry.value.estimatedTimeDisplay,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.mutedForeground,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    '\$${entry.value.price.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.foreground,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
+                            if (entry.key < selectedServices.length - 1)
+                              const Divider(color: AppTheme.border, height: 16),
                           ],
                         ),
                       ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: AppTheme.textSecondary,
+                      const Divider(color: AppTheme.border, height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.foreground,
+                            ),
+                          ),
+                          Text(
+                            '\$${totalPrice.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Selected Services
-              const Text(
-                'Selected Services',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                // Notes
+                const Text(
+                  'Additional Notes',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.foreground,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppTheme.borderColor),
+                const SizedBox(height: 12),
+                ShadcnInput(
+                  controller: _notesController,
+                  placeholder: 'Any special requests or notes for the service...',
+                  maxLines: 3,
                 ),
-                child: Column(
-                  children: [
-                    ...selectedServices.map(
-                      (service) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  service.name,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  service.estimatedTimeDisplay,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              '\$${service.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const Divider(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '\$${totalPrice.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Notes
-              const Text(
-                'Additional Notes',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              CustomTextField(
-                controller: _notesController,
-                label: 'Notes (optional)',
-                hint: 'Any special requests or notes for the service...',
-                prefixIcon: Icons.notes,
-                maxLines: 3,
-              ),
-              const SizedBox(height: 32),
-
-              // Confirm Button
-              GradientButton(
-                text: 'Confirm Booking',
-                isLoading: bookingProvider.isLoading,
-                onPressed: _confirmBooking,
-              ),
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 100),
+              ],
+            ),
           ),
-        ),
+
+          // Bottom CTA
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                border: Border(top: BorderSide(color: AppTheme.border)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: ShadcnButton(
+                  text: 'Confirm Booking',
+                  icon: Icons.check,
+                  width: double.infinity,
+                  isLoading: bookingProvider.isLoading,
+                  onPressed: _confirmBooking,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

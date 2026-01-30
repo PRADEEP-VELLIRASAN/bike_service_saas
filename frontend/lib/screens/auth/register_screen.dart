@@ -45,254 +45,235 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     if (success && mounted) {
-      // Navigation handled by main.dart based on auth state
+      showSnackbar(context, 'Account created successfully!', isSuccess: true);
       Navigator.of(context).popUntil((route) => route.isFirst);
     } else if (mounted && authProvider.error != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.error!),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
+      showSnackbar(context, authProvider.error!, isError: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width > 600;
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: const Icon(Icons.arrow_back, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
+        title: const Text('Create account'),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                const Text(
-                  'Create Account',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Fill in your details to get started',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // Role Selection
-                Text(
-                  'I am a',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _RoleCard(
-                        icon: Icons.person,
-                        title: 'Customer',
-                        subtitle: 'Book bike services',
-                        isSelected: _selectedRole == 'customer',
-                        onTap: () => setState(() => _selectedRole = 'customer'),
-                      ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? size.width * 0.25 : 24,
+              vertical: 24,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Get started',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.foreground,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _RoleCard(
-                        icon: Icons.store,
-                        title: 'Owner',
-                        subtitle: 'Manage services',
-                        isSelected: _selectedRole == 'owner',
-                        onTap: () => setState(() => _selectedRole = 'owner'),
-                      ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Create your account to book bike services',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.mutedForeground,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
 
-                // Name Field
-                CustomTextField(
-                  controller: _nameController,
-                  label: 'Full Name',
-                  hint: 'Enter your full name',
-                  prefixIcon: Icons.person_outline,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    if (value.length < 2) {
-                      return 'Name must be at least 2 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Email Field
-                CustomTextField(
-                  controller: _emailController,
-                  label: 'Email',
-                  hint: 'Enter your email',
-                  prefixIcon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Phone Field
-                CustomTextField(
-                  controller: _phoneController,
-                  label: 'Phone Number',
-                  hint: 'Enter your phone number',
-                  prefixIcon: Icons.phone_outlined,
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your phone number';
-                    }
-                    if (value.length < 10) {
-                      return 'Please enter a valid phone number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Password Field
-                CustomTextField(
-                  controller: _passwordController,
-                  label: 'Password',
-                  hint: 'Create a strong password',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: AppTheme.textSecondary,
+                  // Role Selection Accordion
+                  ShadcnAccordion(
+                    title: 'Account type',
+                    subtitle: _selectedRole == 'customer' ? 'Customer' : 'Business Owner',
+                    leadingIcon: Icons.person_outline,
+                    initiallyExpanded: true,
+                    content: Column(
+                      children: [
+                        _RoleOption(
+                          title: 'Customer',
+                          description: 'Book bike services',
+                          icon: Icons.directions_bike,
+                          isSelected: _selectedRole == 'customer',
+                          onTap: () => setState(() => _selectedRole = 'customer'),
+                        ),
+                        const SizedBox(height: 8),
+                        _RoleOption(
+                          title: 'Business Owner',
+                          description: 'Manage your service station',
+                          icon: Icons.store,
+                          isSelected: _selectedRole == 'owner',
+                          onTap: () => setState(() => _selectedRole = 'owner'),
+                        ),
+                      ],
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Name Field
+                  ShadcnInput(
+                    controller: _nameController,
+                    label: 'Full name',
+                    placeholder: 'John Doe',
+                    prefixIcon: Icons.person_outline,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
                     },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters';
-                    }
-                    if (!value.contains(RegExp(r'[A-Z]'))) {
-                      return 'Password must contain uppercase letter';
-                    }
-                    if (!value.contains(RegExp(r'[a-z]'))) {
-                      return 'Password must contain lowercase letter';
-                    }
-                    if (!value.contains(RegExp(r'[0-9]'))) {
-                      return 'Password must contain a number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                // Confirm Password Field
-                CustomTextField(
-                  controller: _confirmPasswordController,
-                  label: 'Confirm Password',
-                  hint: 'Re-enter your password',
-                  prefixIcon: Icons.lock_outline,
-                  obscureText: _obscureConfirmPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: AppTheme.textSecondary,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
+                  // Email Field
+                  ShadcnInput(
+                    controller: _emailController,
+                    label: 'Email',
+                    placeholder: 'name@example.com',
+                    prefixIcon: Icons.mail_outline,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
                     },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 16),
 
-                // Register Button
-                GradientButton(
-                  text: 'Create Account',
-                  isLoading: authProvider.isLoading,
-                  onPressed: _handleRegister,
-                ),
-                const SizedBox(height: 24),
+                  // Phone Field
+                  ShadcnInput(
+                    controller: _phoneController,
+                    label: 'Phone number',
+                    placeholder: '+1 234 567 8900',
+                    prefixIcon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your phone number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
 
-                // Login Link
-                Center(
-                  child: Row(
+                  // Password Field
+                  ShadcnInput(
+                    controller: _passwordController,
+                    label: 'Password',
+                    placeholder: 'Create a password',
+                    prefixIcon: Icons.lock_outline,
+                    obscureText: _obscurePassword,
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        size: 18,
+                        color: AppTheme.mutedForeground,
+                      ),
+                      onPressed: () {
+                        setState(() => _obscurePassword = !_obscurePassword);
+                      },
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a password';
+                      }
+                      if (value.length < 8) {
+                        return 'Password must be at least 8 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Confirm Password Field
+                  ShadcnInput(
+                    controller: _confirmPasswordController,
+                    label: 'Confirm password',
+                    placeholder: 'Confirm your password',
+                    prefixIcon: Icons.lock_outline,
+                    obscureText: _obscureConfirmPassword,
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                        size: 18,
+                        color: AppTheme.mutedForeground,
+                      ),
+                      onPressed: () {
+                        setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                      },
+                    ),
+                    validator: (value) {
+                      if (value != _passwordController.text) {
+                        return 'Passwords do not match';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Register Button
+                  ShadcnButton(
+                    text: 'Create account',
+                    isLoading: authProvider.isLoading,
+                    onPressed: _handleRegister,
+                    width: double.infinity,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Login Link
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
+                      const Text(
                         'Already have an account? ',
                         style: TextStyle(
-                          color: AppTheme.textSecondary,
+                          fontSize: 14,
+                          color: AppTheme.mutedForeground,
                         ),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
                         child: const Text(
-                          'Sign In',
+                          'Sign in',
                           style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.foreground,
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),
@@ -301,17 +282,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-class _RoleCard extends StatelessWidget {
-  final IconData icon;
+class _RoleOption extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String description;
+  final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _RoleCard({
-    required this.icon,
+  const _RoleOption({
     required this.title,
-    required this.subtitle,
+    required this.description,
+    required this.icon,
     required this.isSelected,
     required this.onTap,
   });
@@ -321,43 +302,51 @@ class _RoleCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryColor.withOpacity(0.1)
-              : AppTheme.surfaceColor,
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected ? AppTheme.accent.withOpacity(0.05) : AppTheme.background,
+          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : AppTheme.borderColor,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? AppTheme.accent : AppTheme.border,
           ),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimary,
+            Icon(icon, size: 20, color: isSelected ? AppTheme.accent : AppTheme.mutedForeground),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: isSelected ? AppTheme.accent : AppTheme.foreground,
+                    ),
+                  ),
+                  Text(
+                    description,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.mutedForeground,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
+            if (isSelected)
+              Container(
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: AppTheme.accent,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check, size: 14, color: Colors.white),
               ),
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),

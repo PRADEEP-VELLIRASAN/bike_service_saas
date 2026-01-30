@@ -29,19 +29,58 @@ class _BookingStatusScreenState extends State<BookingStatusScreen> {
     final booking = bookingProvider.currentBooking;
 
     return Scaffold(
+      backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('Booking Status'),
+        backgroundColor: AppTheme.background,
+        elevation: 0,
+        title: const Text(
+          'Booking Status',
+          style: TextStyle(
+            color: AppTheme.foreground,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: const Icon(Icons.arrow_back, color: AppTheme.foreground),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: bookingProvider.isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: AppTheme.primary,
+                strokeWidth: 2,
+              ),
+            )
           : booking == null
-              ? const EmptyState(
-                  icon: Icons.error_outline,
-                  title: 'Booking not found',
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: AppTheme.muted,
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                        ),
+                        child: const Icon(
+                          Icons.error_outline,
+                          size: 32,
+                          color: AppTheme.mutedForeground,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Booking not found',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.foreground,
+                        ),
+                      ),
+                    ],
+                  ),
                 )
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
@@ -53,68 +92,43 @@ class _BookingStatusScreenState extends State<BookingStatusScreen> {
                       const SizedBox(height: 32),
 
                       // Booking Info Card
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.borderColor),
+                      const Text(
+                        'Booking Details',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.foreground,
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      ShadcnCard(
+                        padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Booking ID',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                                Text(
-                                  '#${booking.id.substring(0, 8)}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                            _InfoRow(
+                              label: 'Booking ID',
+                              value: '#${booking.id.substring(0, 8).toUpperCase()}',
                             ),
-                            const SizedBox(height: 16),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Booking Date',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                ),
-                                Text(
-                                  '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                            const Divider(color: AppTheme.border, height: 24),
+                            _InfoRow(
+                              label: 'Booking Date',
+                              value: '${booking.bookingDate.day}/${booking.bookingDate.month}/${booking.bookingDate.year}',
                             ),
-                            const SizedBox(height: 16),
+                            const Divider(color: AppTheme.border, height: 24),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text(
                                   'Status',
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    color: AppTheme.textSecondary,
+                                    fontSize: 13,
+                                    color: AppTheme.mutedForeground,
                                   ),
                                 ),
-                                StatusChip(status: booking.statusDisplay),
+                                StatusBadge(
+                                  status: booking.statusDisplay,
+                                  color: _getStatusColor(booking.status),
+                                ),
                               ],
                             ),
                           ],
@@ -126,70 +140,68 @@ class _BookingStatusScreenState extends State<BookingStatusScreen> {
                       const Text(
                         'Services',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
+                          color: AppTheme.foreground,
                         ),
                       ),
                       const SizedBox(height: 12),
-                      ...booking.services.map(
-                        (s) => Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppTheme.surfaceColor,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.borderColor),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                s.serviceName,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                '\$${s.servicePrice.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppTheme.primaryColor,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Total
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      ShadcnCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
                           children: [
-                            const Text(
-                              'Total Amount',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                            ...booking.services.asMap().entries.map(
+                              (entry) => Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 8),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          entry.value.serviceName,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: AppTheme.foreground,
+                                          ),
+                                        ),
+                                        Text(
+                                          '\$${entry.value.servicePrice.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppTheme.foreground,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (entry.key < booking.services.length - 1)
+                                    const Divider(color: AppTheme.border, height: 16),
+                                ],
                               ),
                             ),
-                            Text(
-                              '\$${booking.totalPrice.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                            const Divider(color: AppTheme.border, height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.foreground,
+                                  ),
+                                ),
+                                Text(
+                                  '\$${booking.totalPrice.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -200,46 +212,33 @@ class _BookingStatusScreenState extends State<BookingStatusScreen> {
                         const Text(
                           'Notes',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
+                            color: AppTheme.foreground,
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Container(
-                          width: double.infinity,
+                        ShadcnCard(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppTheme.backgroundColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
                           child: Text(
                             booking.notes!,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.mutedForeground,
                             ),
                           ),
                         ),
                       ],
 
-                      // Cancel Button (only for pending/confirmed)
+                      // Cancel Button
                       if (booking.status == BookingStatus.pending ||
                           booking.status == BookingStatus.confirmed) ...[
                         const SizedBox(height: 32),
-                        SizedBox(
+                        ShadcnButton(
+                          text: 'Cancel Booking',
+                          variant: ShadcnButtonVariant.destructive,
                           width: double.infinity,
-                          child: OutlinedButton(
-                            onPressed: () => _showCancelDialog(context),
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: AppTheme.errorColor),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                            child: const Text(
-                              'Cancel Booking',
-                              style: TextStyle(color: AppTheme.errorColor),
-                            ),
-                          ),
+                          onPressed: () => _showCancelDialog(context),
                         ),
                       ],
                       const SizedBox(height: 32),
@@ -249,18 +248,49 @@ class _BookingStatusScreenState extends State<BookingStatusScreen> {
     );
   }
 
+  Color _getStatusColor(BookingStatus status) {
+    switch (status) {
+      case BookingStatus.pending:
+        return const Color(0xFFF59E0B);
+      case BookingStatus.confirmed:
+        return const Color(0xFF3B82F6);
+      case BookingStatus.inProgress:
+        return AppTheme.primary;
+      case BookingStatus.readyForDelivery:
+        return const Color(0xFF10B981);
+      case BookingStatus.completed:
+        return const Color(0xFF059669);
+      case BookingStatus.cancelled:
+        return const Color(0xFFEF4444);
+    }
+  }
+
   void _showCancelDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Cancel Booking'),
-        content: const Text('Are you sure you want to cancel this booking?'),
+        backgroundColor: AppTheme.background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLg),
+          side: const BorderSide(color: AppTheme.border),
+        ),
+        title: const Text(
+          'Cancel Booking',
+          style: TextStyle(color: AppTheme.foreground),
+        ),
+        content: const Text(
+          'Are you sure you want to cancel this booking? This action cannot be undone.',
+          style: TextStyle(color: AppTheme.mutedForeground),
+        ),
         actions: [
-          TextButton(
+          ShadcnButton(
+            text: 'No',
+            variant: ShadcnButtonVariant.outline,
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('No'),
           ),
-          TextButton(
+          ShadcnButton(
+            text: 'Yes, Cancel',
+            variant: ShadcnButtonVariant.destructive,
             onPressed: () async {
               Navigator.pop(ctx);
               final success = await context
@@ -268,21 +298,44 @@ class _BookingStatusScreenState extends State<BookingStatusScreen> {
                   .cancelBooking(widget.bookingId);
               if (success && mounted) {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Booking cancelled'),
-                    backgroundColor: AppTheme.successColor,
-                  ),
-                );
+                showSuccessSnackbar(context, 'Booking cancelled');
               }
             },
-            child: const Text(
-              'Yes, Cancel',
-              style: TextStyle(color: AppTheme.errorColor),
-            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppTheme.mutedForeground,
+          ),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.foreground,
+            fontFamily: 'monospace',
+          ),
+        ),
+      ],
     );
   }
 }
@@ -305,64 +358,74 @@ class _StatusProgress extends StatelessWidget {
     int currentIndex = steps.indexWhere((s) => s.status == status);
     if (currentIndex == -1) currentIndex = 0;
 
-    return Column(
-      children: [
-        Row(
-          children: List.generate(steps.length, (index) {
-            final isActive = index <= currentIndex;
-            final isLast = index == steps.length - 1;
+    return ShadcnCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            children: List.generate(steps.length, (index) {
+              final isActive = index <= currentIndex;
+              final isCurrent = index == currentIndex;
+              final isLast = index == steps.length - 1;
 
-            return Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? AppTheme.primaryColor
-                                : AppTheme.borderColor,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            steps[index].icon,
-                            color: isActive ? Colors.white : AppTheme.textSecondary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          steps[index].label,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                            color: isActive
-                                ? AppTheme.primaryColor
-                                : AppTheme.textSecondary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isLast)
+              return Expanded(
+                child: Row(
+                  children: [
                     Expanded(
-                      child: Container(
-                        height: 3,
-                        color: index < currentIndex
-                            ? AppTheme.primaryColor
-                            : AppTheme.borderColor,
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? AppTheme.primary
+                                  : AppTheme.muted,
+                              shape: BoxShape.circle,
+                              border: isCurrent
+                                  ? Border.all(color: AppTheme.primary, width: 2)
+                                  : null,
+                            ),
+                            child: Icon(
+                              steps[index].icon,
+                              color: isActive ? AppTheme.primaryForeground : AppTheme.mutedForeground,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            steps[index].label,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                              color: isActive
+                                  ? AppTheme.foreground
+                                  : AppTheme.mutedForeground,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                ],
-              ),
-            );
-          }),
-        ),
-      ],
+                    if (!isLast)
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          decoration: BoxDecoration(
+                            color: index < currentIndex
+                                ? AppTheme.primary
+                                : AppTheme.border,
+                            borderRadius: BorderRadius.circular(1),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 }

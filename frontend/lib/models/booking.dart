@@ -82,6 +82,14 @@ class BookingServiceInfo {
       servicePrice: double.parse(json['service_price'].toString()),
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'service_id': serviceId,
+      'service_name': serviceName,
+      'service_price': servicePrice,
+    };
+  }
 }
 
 /// Booking model
@@ -125,6 +133,21 @@ class Booking {
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'customer': customer.toJson(),
+      'booking_date': bookingDate.toIso8601String(),
+      'status': status.apiValue,
+      'status_display': statusDisplay,
+      'total_price': totalPrice,
+      'notes': notes,
+      'services': services.map((s) => s.toJson()).toList(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
   }
 }
 

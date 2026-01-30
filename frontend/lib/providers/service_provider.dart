@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import '../models/service.dart';
-import '../services/api_service.dart';
+import '../services/local_storage_service.dart';
 
-/// Service management provider
+/// Service management provider using local storage
 class ServiceProvider with ChangeNotifier {
-  final ApiService _api = ApiService();
+  final LocalStorageService _storage = LocalStorageService();
   
   List<BikeService> _services = [];
   bool _isLoading = false;
@@ -21,9 +21,9 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final response = await _api.getServices(activeOnly: activeOnly);
+      final response = await _storage.getServices(activeOnly: activeOnly);
       _services = response.services;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
     } catch (e) {
       _error = 'Failed to load services';
@@ -45,7 +45,7 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final service = await _api.createService(
+      final service = await _storage.createService(
         name: name,
         description: description,
         price: price,
@@ -53,7 +53,7 @@ class ServiceProvider with ChangeNotifier {
       );
       _services.insert(0, service);
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {
@@ -79,7 +79,7 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      final updated = await _api.updateService(
+      final updated = await _storage.updateService(
         id: id,
         name: name,
         description: description,
@@ -93,7 +93,7 @@ class ServiceProvider with ChangeNotifier {
         _services[index] = updated;
       }
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {
@@ -112,10 +112,10 @@ class ServiceProvider with ChangeNotifier {
     notifyListeners();
     
     try {
-      await _api.deleteService(id);
+      await _storage.deleteService(id);
       _services.removeWhere((s) => s.id == id);
       return true;
-    } on ApiException catch (e) {
+    } on LocalStorageException catch (e) {
       _error = e.message;
       return false;
     } catch (e) {
